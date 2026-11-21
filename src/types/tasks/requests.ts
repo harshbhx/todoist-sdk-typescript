@@ -1,5 +1,5 @@
 import type { RequireAllOrNone, RequireOneOrNone, RequireExactlyOne } from 'type-fest'
-import type { Duration, Task } from './types'
+import type { CompletedTaskItem, Duration, Task } from './types'
 
 /**
  * Arguments for creating a new task.
@@ -209,5 +209,5 @@ export type GetAllCompletedTasksArgs = {
 export type GetAllCompletedTasksResponse = {
     projects: Record<string, Record<string, unknown>>
     sections: Record<string, Record<string, unknown>>
-    items: Task[]
+    items: CompletedTaskItem[]
 }

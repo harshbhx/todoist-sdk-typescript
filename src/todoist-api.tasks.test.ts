@@ -685,11 +685,25 @@ describe('TodoistApi task endpoints', () => {
     })
 
     describe('getAllCompletedTasks', () => {
+        const DEFAULT_COMPLETED_TASK_ITEM = {
+            completed_at: '2026-11-20T10:15:00.000000Z',
+            content: 'Water the plants',
+            id: DEFAULT_TASK_ID,
+            item_object: null,
+            meta_data: null,
+            note_count: 0,
+            notes: [],
+            project_id: '6Jf8VQXxpwv56VQ7',
+            section_id: null,
+            task_id: DEFAULT_TASK_ID,
+            user_id: '2671355',
+        }
+
         test('returns completed tasks from rest client', async () => {
             const mockResponse = {
                 projects: { '123': { id: '123', name: 'Project' } },
                 sections: {},
-                items: [DEFAULT_TASK],
+                items: [DEFAULT_COMPLETED_TASK_ITEM],
             }
             server.use(
                 http.get(`${getSyncBaseUri()}${ENDPOINT_REST_TASKS_COMPLETED}`, () => {
