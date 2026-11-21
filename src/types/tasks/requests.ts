@@ -197,14 +197,16 @@ export type GetAllCompletedTasksArgs = {
     since?: Date | null
     /** Return items completed before this date. */
     until?: Date | null
-    /** Include comment data in the response. */
+    /** Include comment data in the response, in each item's `notes`. */
     annotateNotes?: boolean
-    /** Include task data in the response. */
+    /** Include task data in the response, in each item's `itemObject`. */
     annotateItems?: boolean
 }
 
 /**
  * Response from getting all completed tasks.
+ *
+ * `items` are completion records, not full tasks: see {@link CompletedTaskItem}.
  */
 export type GetAllCompletedTasksResponse = {
     projects: Record<string, Record<string, unknown>>
