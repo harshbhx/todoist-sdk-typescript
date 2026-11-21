@@ -703,5 +703,53 @@ describe('TodoistApi task endpoints', () => {
             expect(result.items).toHaveLength(1)
             expect(result.projects).toHaveProperty('123')
         })
+
+        test('accepts the completed item shape the API returns', async () => {
+            server.use(
+                http.get(`${getSyncBaseUri()}${ENDPOINT_REST_TASKS_COMPLETED}`, () => {
+                    return HttpResponse.json(
+                        {
+                            items: [
+                                {
+                                    completed_at: '2026-11-20T10:15:00.000000Z',
+                                    content: 'Water the plants',
+                                    id: '6X7rM8997g3RQmvh',
+                                    item_object: null,
+                                    meta_data: null,
+                                    note_count: 0,
+                                    notes: [],
+                                    project_id: '6Jf8VQXxpwv56VQ7',
+                                    section_id: '6Jf8VQXxpwv56VQ8',
+                                    task_id: '6X7rM8997g3RQmvh',
+                                    user_id: '2671355',
+                                },
+                            ],
+                            projects: {},
+                            sections: {},
+                        },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.getAllCompletedTasks()
+
+            expect(result.items).toEqual([
+                {
+                    completedAt: new Date('2026-11-20T10:15:00.000Z'),
+                    content: 'Water the plants',
+                    id: '6X7rM8997g3RQmvh',
+                    itemObject: null,
+                    metaData: null,
+                    noteCount: 0,
+                    notes: [],
+                    projectId: '6Jf8VQXxpwv56VQ7',
+                    sectionId: '6Jf8VQXxpwv56VQ8',
+                    taskId: '6X7rM8997g3RQmvh',
+                    userId: '2671355',
+                },
+            ])
+        })
     })
 })
