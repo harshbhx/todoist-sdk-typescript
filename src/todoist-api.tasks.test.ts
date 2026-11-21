@@ -765,5 +765,75 @@ describe('TodoistApi task endpoints', () => {
                 },
             ])
         })
+
+        test('returns an empty list when nothing was completed', async () => {
+            server.use(
+                http.get(`${getSyncBaseUri()}${ENDPOINT_REST_TASKS_COMPLETED}`, () => {
+                    return HttpResponse.json(
+                        { items: [], projects: {}, sections: {} },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.getAllCompletedTasks()
+
+            expect(result.items).toEqual([])
+        })
+
+        test('keeps the task and comments returned for annotated items', async () => {
+            let requestUrl = ''
+            server.use(
+                http.get(`${getSyncBaseUri()}${ENDPOINT_REST_TASKS_COMPLETED}`, ({ request }) => {
+                    requestUrl = request.url
+                    return HttpResponse.json(
+                        {
+                            items: [
+                                {
+                                    ...DEFAULT_COMPLETED_TASK_ITEM,
+                                    note_count: 1,
+                                    notes: [{ id: 'note-1', content: 'Done early' }],
+                                    item_object: { id: DEFAULT_TASK_ID, project_id: 'proj-1' },
+                                },
+                            ],
+                            projects: {},
+                            sections: {},
+                        },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.getAllCompletedTasks({
+                annotateItems: true,
+                annotateNotes: true,
+            })
+
+            expect(new URL(requestUrl).searchParams.get('annotate_items')).toBe('true')
+            expect(new URL(requestUrl).searchParams.get('annotate_notes')).toBe('true')
+            expect(result.items[0].noteCount).toBe(1)
+            expect(result.items[0].notes).toEqual([{ id: 'note-1', content: 'Done early' }])
+            expect(result.items[0].itemObject).toEqual({
+                id: DEFAULT_TASK_ID,
+                projectId: 'proj-1',
+            })
+        })
+
+        test('rejects an item that has no completion date', async () => {
+            const { completed_at: _completedAt, ...incompleteItem } = DEFAULT_COMPLETED_TASK_ITEM
+            server.use(
+                http.get(`${getSyncBaseUri()}${ENDPOINT_REST_TASKS_COMPLETED}`, () => {
+                    return HttpResponse.json(
+                        { items: [incompleteItem], projects: {}, sections: {} },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            await expect(api.getAllCompletedTasks()).rejects.toThrow()
+        })
     })
 })
