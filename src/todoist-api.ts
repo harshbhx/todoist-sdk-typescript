@@ -514,6 +514,9 @@ export class TodoistApi {
      * full {@link Task}. Set `annotateItems` to get the task itself in `itemObject`, and
      * `annotateNotes` to get its comments in `notes`.
      *
+     * The API has deprecated this endpoint in favour of the one behind
+     * `getCompletedTasksByCompletionDate`, which returns full tasks.
+     *
      * @param args - Optional parameters including project ID, label, date range, and pagination.
      * @returns A promise that resolves to completed items with associated project and section data.
      */

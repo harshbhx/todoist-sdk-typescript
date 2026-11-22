@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { hasUncompletablePrefix } from '../../utils/uncompletable-helpers'
 import { getTaskUrl } from '../../utils/url-helpers'
+import { CommentSchema } from '../comments/types'
 
 export const DueDateSchema = z
     .object({
@@ -94,15 +95,15 @@ export const CompletedTaskItemSchema = z.object({
     content: z.string(),
     completedAt: z.coerce.date(),
     noteCount: z.number().int(),
-    notes: z.array(z.unknown()),
-    itemObject: z.record(z.string(), z.unknown()).nullable(),
-    metaData: z.record(z.string(), z.unknown()).nullable(),
+    notes: z.array(CommentSchema),
+    itemObject: TaskSchema.nullable(),
+    metaData: z.string().nullable(),
 })
 /**
  * Represents an entry of the completed tasks list returned by `getAllCompletedTasks`.
  *
  * This is not a full {@link Task}: it only carries what the endpoint reports about
- * the completion. Pass `annotateItems: true` to get the task itself in `itemObject`.
- * @see https://developer.todoist.com/api/v1/#tag/Tasks/operation/get_all_completed_items_api_v1_tasks_completed_get
+ * the completion. Pass `annotateItems: true` to get the task itself in `itemObject`,
+ * and `annotateNotes: true` to get its comments in `notes`.
  */
 export type CompletedTaskItem = z.infer<typeof CompletedTaskItemSchema>

@@ -1,3 +1,4 @@
+import { ZodError } from 'zod'
 import { TodoistApi } from '.'
 import {
     getSyncBaseUri,
@@ -14,6 +15,8 @@ import {
 import { server, http, HttpResponse } from './test-utils/msw-setup'
 import {
     DEFAULT_AUTH_TOKEN,
+    DEFAULT_COMMENT,
+    DEFAULT_RAW_COMMENT,
     DEFAULT_REQUEST_ID,
     DEFAULT_TASK,
     DEFAULT_TASK_ID,
@@ -782,7 +785,7 @@ describe('TodoistApi task endpoints', () => {
             expect(result.items).toEqual([])
         })
 
-        test('keeps the task and comments returned for annotated items', async () => {
+        test('parses the task and comments returned for annotated items', async () => {
             let requestUrl = ''
             server.use(
                 http.get(`${getSyncBaseUri()}${ENDPOINT_REST_TASKS_COMPLETED}`, ({ request }) => {
@@ -793,8 +796,8 @@ describe('TodoistApi task endpoints', () => {
                                 {
                                     ...DEFAULT_COMPLETED_TASK_ITEM,
                                     note_count: 1,
-                                    notes: [{ id: 'note-1', content: 'Done early' }],
-                                    item_object: { id: DEFAULT_TASK_ID, project_id: 'proj-1' },
+                                    notes: [DEFAULT_RAW_COMMENT],
+                                    item_object: DEFAULT_TASK,
                                 },
                             ],
                             projects: {},
@@ -814,11 +817,28 @@ describe('TodoistApi task endpoints', () => {
             expect(new URL(requestUrl).searchParams.get('annotate_items')).toBe('true')
             expect(new URL(requestUrl).searchParams.get('annotate_notes')).toBe('true')
             expect(result.items[0].noteCount).toBe(1)
-            expect(result.items[0].notes).toEqual([{ id: 'note-1', content: 'Done early' }])
-            expect(result.items[0].itemObject).toEqual({
-                id: DEFAULT_TASK_ID,
-                projectId: 'proj-1',
-            })
+            expect(result.items[0].notes).toEqual([DEFAULT_COMMENT])
+            expect(result.items[0].itemObject).toEqual(DEFAULT_TASK)
+        })
+
+        test('accepts legacy metadata, which the API sends as a string', async () => {
+            server.use(
+                http.get(`${getSyncBaseUri()}${ENDPOINT_REST_TASKS_COMPLETED}`, () => {
+                    return HttpResponse.json(
+                        {
+                            items: [{ ...DEFAULT_COMPLETED_TASK_ITEM, meta_data: 'legacy note' }],
+                            projects: {},
+                            sections: {},
+                        },
+                        { status: 200 },
+                    )
+                }),
+            )
+            const api = getTarget()
+
+            const result = await api.getAllCompletedTasks()
+
+            expect(result.items[0].metaData).toBe('legacy note')
         })
 
         test('rejects an item that has no completion date', async () => {
@@ -833,7 +853,12 @@ describe('TodoistApi task endpoints', () => {
             )
             const api = getTarget()
 
-            await expect(api.getAllCompletedTasks()).rejects.toThrow()
+            const error = await api.getAllCompletedTasks().catch((e: unknown) => e)
+
+            expect(error).toBeInstanceOf(ZodError)
+            expect((error as ZodError).issues.map((issue) => issue.path)).toEqual([
+                [0, 'completedAt'],
+            ])
         })
     })
 })
